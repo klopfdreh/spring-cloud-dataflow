@@ -60,8 +60,9 @@ jobs:
     # build and publish
     - name: Build and Publish
       run: |
-        mvn clean        
-        jfrog rt mvn install -Pfull,asciidoctordocs,restdocs -B $MAVEN_THREADS
+        mvn clean
+        ./spring-cloud-dataflow-package/set-package-version.sh
+        jfrog rt mvn install -Pfull,asciidoctordocs,restdocs -B                  
         jfrog rt build-publish
     - name: Capture Test Results
       if: ${{ always() }}

@@ -17,9 +17,10 @@
 package org.springframework.cloud.dataflow.server.configuration;
 
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.sql.DataSource;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,11 +87,13 @@ import org.springframework.cloud.dataflow.server.service.impl.validation.Default
 import org.springframework.cloud.deployer.spi.scheduler.Scheduler;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.task.configuration.TaskProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -294,6 +297,7 @@ public class TaskServiceDependencies extends WebMvcConfigurationSupport {
 	@Bean
 	@ConditionalOnMissingBean
 	public TaskExecutionService defaultTaskService(
+			ApplicationContext applicationContext,
 			LauncherRepository launcherRepository,
 			AuditRecordService auditRecordService,
 			TaskRepositoryContainer taskRepositoryContainer,
@@ -309,8 +313,10 @@ public class TaskServiceDependencies extends WebMvcConfigurationSupport {
 			TaskSaveService taskSaveService,
 			AggregateExecutionSupport aggregateExecutionSupport,
 			TaskDefinitionRepository taskDefinitionRepository,
-			TaskDefinitionReader taskDefinitionReader) {
+			TaskDefinitionReader taskDefinitionReader
+	) {
 		DefaultTaskExecutionService taskExecutionService = new DefaultTaskExecutionService(
+				applicationContext.getEnvironment(),
 				launcherRepository,
 				auditRecordService,
 				taskRepositoryContainer,
@@ -328,8 +334,7 @@ public class TaskServiceDependencies extends WebMvcConfigurationSupport {
 				taskSaveService,
 				this.taskConfigurationProperties,
 				aggregateExecutionSupport,
-				this.composedTaskRunnerConfigurationProperties
-		);
+				this.composedTaskRunnerConfigurationProperties);
 		taskExecutionService.setAutoCreateTaskDefinitions(this.taskConfigurationProperties.isAutoCreateTaskDefinitions());
 		return taskExecutionService;
 	}
@@ -367,13 +372,27 @@ public class TaskServiceDependencies extends WebMvcConfigurationSupport {
 			AuditRecordService auditRecordService,
 			TaskConfigurationProperties taskConfigurationProperties,
 			DataSourceProperties dataSourceProperties,
+			AggregateExecutionSupport aggregateExecutionSupport,
+			TaskDefinitionReader taskDefinitionReader,
+			TaskExecutionInfoService taskExecutionInfoService,
+			PropertyResolver propertyResolver,
 			ComposedTaskRunnerConfigurationProperties composedTaskRunnerConfigurationProperties
 	) {
 		return new DefaultSchedulerService(commonApplicationProperties,
-				taskPlatforms, taskDefinitionRepository,
-				registry, resourceLoader,
-				taskConfigurationProperties, dataSourceProperties, null,
-				metaDataResolver, schedulerServiceProperties, auditRecordService,
+				taskPlatforms,
+				taskDefinitionRepository,
+				registry,
+				resourceLoader,
+				taskConfigurationProperties,
+				dataSourceProperties,
+				null,
+				metaDataResolver,
+				schedulerServiceProperties,
+				auditRecordService,
+				aggregateExecutionSupport,
+				taskDefinitionReader,
+				taskExecutionInfoService,
+				propertyResolver,
 				composedTaskRunnerConfigurationProperties);
 	}
 
